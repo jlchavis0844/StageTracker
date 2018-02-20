@@ -49,23 +49,25 @@ namespace StageTracker {
             }
 
             log = File.AppendText(logPath);
-            log.WriteLine("Starting check");
-            Console.WriteLine("Starting check");
+            log.WriteLine("Starting check at " + now );
+            Console.WriteLine("Starting check " + now);
 
             string me = Environment.UserDomainName.ToString() + @"\" + Environment.UserName;
             SetStageData();
             SetOwnerData();
 
-            bool stop = false;
+            bool top = false;
 
-            while (!stop) { // continue until there are less than 100 results
+            while (!top) { // continue until there are less than 100 results
                 string rawJSON = Get(startURL + position, token);
                 JObject jsonObj = JObject.Parse(rawJSON) as JObject;
 
                 var items = jsonObj["items"] as JArray;
-                if(items.Count == 0) {
-                    stop = true;
-                }
+                top = Convert.ToBoolean(jsonObj["meta"]["top"]);
+
+
+                log.WriteLine("starting check of " + items.Count + " events at position " + position);
+                Console.WriteLine("starting check of " + items.Count + " events at position " + position);
 
                 foreach (var item in items) {
                     var data = item["data"];
