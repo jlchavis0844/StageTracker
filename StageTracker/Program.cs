@@ -19,8 +19,8 @@ namespace StageTracker {
         private static string connString = "Data Source=RALIMSQL1;Initial Catalog=CAMSRALFG;Integrated Security=SSPI;";
         private static string line = @"INSERT INTO [CAMSRALFG].[dbo].[Base_StageChanges] ([deal_id] ,[stage_id] ,[stage_name] ,"+
             "[owner_id] ,[owner_name] ,[contact_id] ,[ecd] ,[changed_at] ,[event_id] ,[event_type] ,[previous_stage_id] , " +
-            "[previous_stage_name] ,[position]) VALUES (@deal_id ,@stage_id ,@stage_name ,@owner_id ,@owner_name ,@contact_id ," +
-            "@ecd ,@changed_at ,@event_id ,@event_type ,@previous_stage_id ,@previous_stage_name ,@position); ";
+            "[previous_stage_name] ,[position], [deal_created_at]) VALUES (@deal_id ,@stage_id ,@stage_name ,@owner_id ,@owner_name ,@contact_id ," +
+            "@ecd ,@changed_at ,@event_id ,@event_type ,@previous_stage_id ,@previous_stage_name ,@position, @deal_created_at); ";
 
         static void Main(string[] args) {
 
@@ -86,6 +86,8 @@ namespace StageTracker {
                     int stage_id = Convert.ToInt32(data["stage_id"]);
                     string stage_name = stageData[stage_id];
 
+                    DateTime created_at = Convert.ToDateTime(data["created_at"]).ToLocalTime();
+
                     string estimated_close_date = "";
                     if (data["estimated_close_date"] != null) {
                         estimated_close_date = data["estimated_close_date"].ToString();
@@ -109,7 +111,7 @@ namespace StageTracker {
                         } else continue; // if this is updated but we don't know where it was, ignore it
                     }
                     conList.Add(new Deal(id, stage_id, stage_name, owner_id, owner_name, contact_id, estimated_close_date, 
-                        event_time, event_id, event_type, previous_stage_id, previous_stage_name, position));
+                        event_time, event_id, event_type, previous_stage_id, previous_stage_name, position, created_at));
                 }
                 position = jsonObj["meta"]["position"].ToString();
                 using (var posReader = new StreamWriter(@"\\NAS3\NOE_Docs$\RALIM\Logs\Base\position", false)) {
@@ -139,7 +141,8 @@ namespace StageTracker {
                         item.event_type + ", " +
                         item.previous_stage_id + ", " +
                         item.previous_stage_name + ", " +
-                        item.position;
+                        item.position + ", " +
+                        item.created_at;
                     log.WriteLine(thisLine);
                     Console.WriteLine(thisLine);
 
@@ -157,6 +160,7 @@ namespace StageTracker {
                         command.Parameters.Add("@previous_stage_id", SqlDbType.Int).Value = item.previous_stage_id;
                         command.Parameters.Add("@previous_stage_name", SqlDbType.NVarChar).Value = item.previous_stage_name;
                         command.Parameters.Add("@position", SqlDbType.NVarChar).Value = item.position;
+                        command.Parameters.Add("@deal_created_at", SqlDbType.DateTime).Value = item.created_at;
                         string query = command.CommandText;
 
                         //foreach (SqlParameter p in command.Parameters) {
